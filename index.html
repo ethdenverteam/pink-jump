@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Pink Doodle Jump Ultra — Бонусы ×20 (переработанные эффекты)</title>
+  <title>Pink Doodle Jump Ultra — Общий рейтинг</title>
   <style>
     :root {
       --bg1: #ffe7f7;
@@ -62,14 +62,12 @@
       isolation: isolate;
     }
 
-    /* Инверсия только от ракеты (без антизвезды) */
     .game-shell.invert-mode {
       filter: invert(1) hue-rotate(180deg) saturate(1.35) contrast(1.08);
       box-shadow: 0 0 0 6px rgba(255,255,255,0.5), 0 0 45px rgba(255,255,255,0.9), 0 18px 60px rgba(255,255,255,0.5);
       animation: invertPulse 0.35s ease-in-out infinite alternate;
     }
 
-    /* Очки: менее тёмный режим */
     .game-shell.glasses-mode {
       background: linear-gradient(180deg, #3a1f30, #2c1824 46%, #1f141b 100%);
       box-shadow: 0 12px 48px rgba(0,0,0,0.56), inset 0 0 0 2px rgba(255,255,255,0.06);
@@ -95,7 +93,6 @@
       box-shadow: 0 8px 18px rgba(0,0,0,0.34) !important;
     }
 
-    /* Неон для панелей (при комбо) */
     .game-shell.glasses-mode.neon-panels .pill,
     .game-shell.glasses-mode.neon-panels .panel,
     .game-shell.glasses-mode.neon-panels .control-btn {
@@ -126,6 +123,8 @@
       transition: filter 0.25s ease;
     }
 
+    /* НОВЫЙ UI: левая колонка — счет, эффект, спектр (3), ракета */
+    /* Правая колонка — общий рейтинг (без локального рекорда) */
     .hud {
       position: absolute;
       top: 10px;
@@ -134,7 +133,7 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 6px;
+      gap: 8px;
       pointer-events: none;
       z-index: 5;
       font-weight: 700;
@@ -145,32 +144,72 @@
       flex-direction: column;
       gap: 6px;
       align-items: flex-start;
+      min-width: 130px;
     }
 
-    .hud-right { align-items: flex-end; }
+    .hud-right {
+      align-items: flex-end;
+      max-width: 150px;
+    }
 
+    /* Прозрачные стили для всех pill */
     .pill {
-      background: rgba(255,255,255,0.78);
-      border: 2px solid rgba(255,255,255,0.94);
-      box-shadow: 0 8px 18px rgba(168, 32, 109, 0.18);
+      background: rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
       padding: 6px 12px;
-      border-radius: 999px;
-      backdrop-filter: blur(6px);
-      font-size: 13px;
-      color: #7a2763;
-      transition: background 0.25s ease, box-shadow 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+      border-radius: 40px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #4a1f3a;
+      transition: all 0.2s ease;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      width: auto;
+      max-width: 100%;
     }
 
-    .booster-pill {
+    .hud-left .pill {
       width: 140px;
-      text-align: center;
+      text-align: left;
+    }
+
+    .hud-right .pill {
+      width: 140px;
+      text-align: right;
+      justify-content: flex-end;
+    }
+
+    /* Рейтинг — список */
+    .leaderboard-pill {
+      background: rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 20px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #4a1f3a;
+      width: 140px;
+      text-align: right;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .leaderboard-title {
       font-weight: 800;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      background: rgba(255, 215, 240, 0.6);
+      text-align: center;
+      justify-content: center;
+      margin-bottom: 2px;
+    }
+
+    .leaderboard-entry {
+      font-family: monospace;
+      font-size: 11px;
     }
 
     .booster-pill.ready {
@@ -181,7 +220,6 @@
 
     .fx-pill {
       font-size: 12px;
-      opacity: 0.95;
     }
 
     .overlay {
@@ -288,6 +326,8 @@
 
     @media (min-width: 900px) {
       .control-btn { width: 74px; height: 74px; }
+      .pill, .leaderboard-pill { font-size: 13px; padding: 7px 12px; }
+      .hud-left .pill, .hud-right .pill { width: 150px; }
     }
   </style>
 </head>
@@ -300,13 +340,11 @@
         <div class="pill">💖 Счёт: <span id="score">0</span></div>
         <div class="pill fx-pill">🎀 Эффект: <span id="fxName">искры</span></div>
         <div class="pill fx-pill" id="hueStatus">🌈 Спектр: 0/3</div>
+        <div class="pill booster-pill" id="rocketStatus">🚀 Ракета: ждём</div>
       </div>
       <div class="hud-right">
-        <div class="pill">🏆 Рекорд: <span id="best">0</span></div>
-        <div class="pill booster-pill" id="rocketStatus">🚀 Ракета: ждём</div>
-        <div class="pill booster-pill" id="jumpStatus">🪽 Прыжок+: ждём</div>
-        <div class="pill booster-pill" id="glassesStatus">🕶 Очки: ждём</div>
-        <div class="pill booster-pill" id="starStatus">⭐ Антибонус: ждём</div>
+        <div class="pill leaderboard-title">🏆 ОБЩИЙ РЕЙТИНГ</div>
+        <div id="leaderboardList"></div>
       </div>
     </div>
 
@@ -317,7 +355,7 @@
         <p>Управление: <b>← →</b> / <b>A D</b><br>На телефоне — кнопки снизу.</p>
         <p><b>🕶 Очки</b>: +666 очков и полумрак на 22 сек.</p>
         <p><b>🚀 Ракета</b>: +1000 очков, инверсия на 5 сек + прыжок+ на 10 сек.</p>
-        <p><b>⭐ Антизвезда</b>: снимает все бонусы и заливает экран белым на 10 сек (70% прозрачности).</p>
+        <p><b>⭐ Антизвезда</b>: снимает все бонусы и заливает экран белым на 10 сек.</p>
         <button class="btn" id="startBtn">Играть</button>
       </div>
     </div>
@@ -344,7 +382,6 @@
     const gameShell = document.getElementById('gameShell');
 
     const scoreEl = document.getElementById('score');
-    const bestEl = document.getElementById('best');
     const finalScoreEl = document.getElementById('finalScore');
     const startOverlay = document.getElementById('startOverlay');
     const gameOverOverlay = document.getElementById('gameOverOverlay');
@@ -358,13 +395,71 @@
     const starStatusEl = document.getElementById('starStatus');
     const hueStatusEl = document.getElementById('hueStatus');
     const fxNameEl = document.getElementById('fxName');
+    const leaderboardList = document.getElementById('leaderboardList');
 
     const W = canvas.width;
     const H = canvas.height;
     const STORAGE_KEY = 'pink_doodle_jump_best';
+    const LEADERBOARD_KEY = 'pink_global_rank';
 
     let bestScore = Number(localStorage.getItem(STORAGE_KEY) || 0);
-    bestEl.textContent = bestScore;
+
+    // ----- Глобальный рейтинг (имитация с локальным хранилищем и демо-данными) -----
+    let leaderboard = [];
+
+    function loadLeaderboard() {
+      const stored = localStorage.getItem(LEADERBOARD_KEY);
+      if (stored) {
+        leaderboard = JSON.parse(stored);
+      } else {
+        leaderboard = [
+          { name: "🌟 Мастерица", score: 8450 },
+          { name: "🌸 Розовый цветок", score: 6320 },
+          { name: "💖 Прыгунья", score: 5100 },
+          { name: "🎀 Искорка", score: 4270 },
+          { name: "✨ Новичок", score: 3150 }
+        ];
+        saveLeaderboard();
+      }
+      renderLeaderboard();
+    }
+
+    function saveLeaderboard() {
+      localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(leaderboard));
+    }
+
+    function addScoreToLeaderboard(finalScore) {
+      if (finalScore === 0) return;
+      const guestName = "👤 Гость " + Math.floor(Math.random() * 1000);
+      const newEntry = { name: guestName, score: Math.floor(finalScore) };
+      leaderboard.push(newEntry);
+      leaderboard.sort((a, b) => b.score - a.score);
+      if (leaderboard.length > 8) leaderboard = leaderboard.slice(0, 8);
+      saveLeaderboard();
+      renderLeaderboard();
+    }
+
+    function renderLeaderboard() {
+      leaderboardList.innerHTML = '';
+      for (let i = 0; i < Math.min(leaderboard.length, 5); i++) {
+        const entry = leaderboard[i];
+        const div = document.createElement('div');
+        div.className = 'leaderboard-entry pill';
+        div.style.display = 'flex';
+        div.style.justifyContent = 'space-between';
+        div.style.width = '140px';
+        div.style.padding = '4px 8px';
+        div.style.fontSize = '11px';
+        div.innerHTML = `<span>${i+1}. ${entry.name}</span><span style="font-weight:800">${entry.score}</span>`;
+        leaderboardList.appendChild(div);
+      }
+      if (leaderboard.length === 0) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'pill';
+        emptyDiv.textContent = 'Нет данных';
+        leaderboardList.appendChild(emptyDiv);
+      }
+    }
 
     const FX_NAMES = {
       sparkles: 'искры',
@@ -397,7 +492,7 @@
       glassesTimer: 0,
       neonTimer: 0,
       jumpBoostTimer: 0,
-      starTimer: 0,           // антизвезда: белый экран 10 сек, без инверсии
+      starTimer: 0,
       rocketsDuringPoints: 0,
       hueShiftActive: false,
       springTrailTimer: 0,
@@ -517,7 +612,6 @@
     }
 
     function updateStatuses() {
-      // Ракета / инверсия
       if (state.invertTimer > 0) {
         rocketStatusEl.textContent = `🚀 Инверсия: ${Math.ceil(state.invertTimer / 60)}с`;
         rocketStatusEl.classList.add('ready');
@@ -559,7 +653,6 @@
         starStatusEl.classList.remove('ready');
       }
 
-      // Спектр теперь 3/3
       if (state.glassesTimer > 0 && !state.hueShiftActive) {
         hueStatusEl.textContent = `🌈 Спектр: ${state.rocketsDuringPoints}/3`;
         hueStatusEl.classList.toggle('ready', state.rocketsDuringPoints > 0);
@@ -575,7 +668,6 @@
     function syncVisualModes() {
       gameShell.classList.toggle('glasses-mode', state.glassesTimer > 0);
       gameShell.classList.toggle('neon-panels', state.neonTimer > 0 && state.glassesTimer > 0);
-      // Инверсия только от ракеты (invertTimer), антизвезда не даёт инверсию
       gameShell.classList.toggle('invert-mode', state.invertTimer > 0 && state.glassesTimer <= 0);
       refreshHueShift();
     }
@@ -623,12 +715,13 @@
 
     function gameOver() {
       state.running = false;
-      finalScoreEl.textContent = Math.floor(state.score);
-      if (state.score > bestScore) {
-        bestScore = Math.floor(state.score);
+      const finalScoreInt = Math.floor(state.score);
+      finalScoreEl.textContent = finalScoreInt;
+      if (finalScoreInt > bestScore) {
+        bestScore = finalScoreInt;
         localStorage.setItem(STORAGE_KEY, String(bestScore));
-        bestEl.textContent = bestScore;
       }
+      addScoreToLeaderboard(finalScoreInt);
       document.body.classList.remove('page-hue-shift');
       syncVisualModes();
       updateStatuses();
@@ -652,11 +745,6 @@
           state.antiStar = createAntiStar(-rand(150, 360));
         }
         state.nextPickupRollScore += 15;
-      }
-      if (state.score > bestScore) {
-        bestScore = Math.floor(state.score);
-        bestEl.textContent = bestScore;
-        localStorage.setItem(STORAGE_KEY, String(bestScore));
       }
       updateStatuses();
     }
@@ -703,7 +791,6 @@
         state.neonTimer = Math.max(state.neonTimer, 7 * 60);
         state.glassesTimer = Math.max(0, state.glassesTimer - 5 * 60);
         state.rocketsDuringPoints += 1;
-        // Порог активации спектра — 3 ракетки (было 5)
         if (state.rocketsDuringPoints >= 3) state.hueShiftActive = true;
         spawnTrail(rocket.x + rocket.w / 2, rocket.y + rocket.h / 2, 34, 'spark', ['#ffbaf0', '#ff67bf', '#fff']);
       } else {
@@ -722,15 +809,14 @@
       syncVisualModes();
     }
 
-    // Антизвезда: снимаем все бонусы, белый экран 10 сек с 70% opacity, без инверсии
     function triggerAntiStar(star) {
       if (!star || !star.active) return;
       star.active = false;
-      clearActiveBonuses();           // сбрасываем все положительные бонусы
-      state.starTimer = 10 * 60;      // 10 секунд белого экрана
+      clearActiveBonuses();
+      state.starTimer = 10 * 60;
       spawnTrail(star.x + star.w / 2, star.y + star.h / 2, 30, 'spark', ['#fff7b2', '#ffffff', '#ff9cdd']);
       updateStatuses();
-      syncVisualModes();              // убираем инверсию и прочее, оставляем starTimer
+      syncVisualModes();
     }
 
     function intersects(a, b) {
@@ -844,7 +930,6 @@
         }
       }
 
-      // Бонусы
       if (state.rocket && state.rocket.active) {
         state.rocket.t += 0.08 * dt;
         state.rocket.x += Math.sin(state.rocket.t) * 0.55;
@@ -863,12 +948,10 @@
         if (intersects(p, state.antiStar)) triggerAntiStar(state.antiStar);
       }
 
-      // Удаляем устаревшие бонусы
       if (state.rocket && (state.rocket.y > H + 100 || !state.rocket.active)) state.rocket = null;
       if (state.glasses && (state.glasses.y > H + 100 || !state.glasses.active)) state.glasses = null;
       if (state.antiStar && (state.antiStar.y > H + 100 || !state.antiStar.active)) state.antiStar = null;
 
-      // Камера
       if (p.y < state.cameraThreshold) {
         const diff = state.cameraThreshold - p.y;
         p.y = state.cameraThreshold;
@@ -894,7 +977,6 @@
         state.platforms.push(plat);
       }
 
-      // Частицы
       for (let i = state.particles.length - 1; i >= 0; i--) {
         const particle = state.particles[i];
         particle.x += particle.vx * dt;
@@ -912,7 +994,6 @@
         if (b.life <= 0) state.rocketBursts.splice(i, 1);
       }
 
-      // Таймеры: invertTimer (ракета) и starTimer (антизвезда)
       if (state.invertTimer > 0 && state.glassesTimer <= 0) {
         state.invertTimer -= dt;
         if (chance(0.45)) {
@@ -956,7 +1037,6 @@
       if (p.y > H + 80) gameOver();
     }
 
-    // ------------------ ОТРИСОВКА (с неоновыми платформами для комбо) ------------------
     function drawHeartShape(x, y, size, color, alpha = 1, rot = 0) {
       ctx.save();
       ctx.translate(x, y);
@@ -1171,7 +1251,6 @@
       }
     }
 
-    // Платформы с поддержкой неонового свечения для комбо (очки + ракетка)
     function drawPlatform(plat) {
       const glow = (Math.sin(plat.pulse) + 1) * 0.5;
       const dark = state.glassesTimer > 0;
@@ -1183,7 +1262,6 @@
       ctx.translate(plat.x, plat.y);
       ctx.globalAlpha = alpha;
       
-      // Неоновое свечение для платформ при комбо
       if (neonActive) {
         ctx.shadowColor = '#ff66cc';
         ctx.shadowBlur = 18;
@@ -1381,7 +1459,6 @@
       drawParticles();
       drawPlayer();
 
-      // Эффект антизвезды: белый экран 70% opacity (поверх всего, включая затемнение очков)
       if (state.starTimer > 0) {
         ctx.save();
         ctx.globalAlpha = 0.7;
@@ -1399,7 +1476,6 @@
         ctx.restore();
       }
 
-      // Лёгкое затемнение для очков (менее тёмное)
       if (dark) {
         ctx.save();
         ctx.fillStyle = 'rgba(8, 7, 10, 0.15)';
@@ -1448,6 +1524,7 @@
       if (!state.running && !startOverlay.classList.contains('hidden')) resetGame();
     });
 
+    loadLeaderboard();
     resetWorldDecor();
     updateStatuses();
     syncVisualModes();
