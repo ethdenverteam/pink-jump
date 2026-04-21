@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -511,10 +510,8 @@
       ambientMode: 'sparkles',
       input: { left: false, right: false },
       lastTime: 0,
-      // Заморозка времени
       frozen: false,
-      freezeCooldown: 0,       // оставшееся время КД в секундах (умножаем на 60 для кадров)
-      freezeCooldownFrames: 0, // для хранения в кадрах (60 кадров = 1 сек)
+      freezeCooldownFrames: 0,
     };
 
     function rand(min, max) { return Math.random() * (max - min) + min; }
@@ -627,7 +624,6 @@
     }
 
     function updateStatuses() {
-      // Ракета
       if (state.invertTimer > 0) {
         rocketStatusEl.textContent = `🚀 Инверсия: ${Math.ceil(state.invertTimer / 60)}с`;
         rocketStatusEl.classList.add('ready');
@@ -669,7 +665,6 @@
         starStatusEl.classList.remove('ready');
       }
 
-      // Спектр
       if (state.glassesTimer > 0 && !state.hueShiftActive) {
         hueStatusEl.textContent = `🌈 Спектр: ${state.rocketsDuringPoints}/3`;
         hueStatusEl.classList.toggle('ready', state.rocketsDuringPoints > 0);
@@ -681,7 +676,6 @@
         hueStatusEl.classList.remove('ready');
       }
 
-      // Заморозка
       const canFreeze = (state.freezeCooldownFrames <= 0 || (state.neonTimer > 0 && state.glassesTimer > 0));
       if (state.frozen) {
         freezeStatusEl.textContent = '❄️ Заморозка: АКТИВНА';
@@ -834,7 +828,6 @@
       state.jumpBoostTimer = 10 * 60;
       state.player.vy = power;
 
-      // Ракета снимает 5 секунд с КД заморозки (если КД активен)
       if (state.freezeCooldownFrames > 0) {
         state.freezeCooldownFrames = Math.max(0, state.freezeCooldownFrames - 5 * 60);
       }
@@ -852,7 +845,6 @@
       star.active = false;
       clearActiveBonuses();
       state.starTimer = 10 * 60;
-      // Антизвезда: снимаем заморозку и ставим КД на 10 секунд (полный сброс)
       state.frozen = false;
       state.freezeCooldownFrames = 10 * 60;
       spawnTrail(star.x + star.w / 2, star.y + star.h / 2, 30, 'spark', ['#fff7b2', '#ffffff', '#ff9cdd']);
@@ -860,20 +852,17 @@
       syncVisualModes();
     }
 
-    // Функция активации заморозки
     function toggleFreeze() {
       if (!state.running) return;
       const noCooldown = (state.freezeCooldownFrames <= 0) || (state.neonTimer > 0 && state.glassesTimer > 0);
-      if (!noCooldown) return; // КД активен и не в спектре
+      if (!noCooldown) return;
       if (!state.frozen) {
-        // Активируем заморозку: обнуляем скорость, замораживаем
         if (state.player) {
           state.player.vx = 0;
           state.player.vy = 0;
         }
         state.frozen = true;
       } else {
-        // Отключаем заморозку, ставим КД 10 секунд (если не в спектре)
         state.frozen = false;
         if (!(state.neonTimer > 0 && state.glassesTimer > 0)) {
           state.freezeCooldownFrames = 10 * 60;
@@ -925,12 +914,10 @@
 
       updateAmbient(dt);
 
-      // Обновление КД заморозки
       if (state.freezeCooldownFrames > 0) {
         state.freezeCooldownFrames = Math.max(0, state.freezeCooldownFrames - dt * 60);
       }
 
-      // Если заморожены — не обрабатываем движение и управление
       if (!state.frozen) {
         let dir = 0;
         if (state.input.left) dir -= 1;
@@ -946,16 +933,13 @@
         p.vy += state.gravity * dt;
         p.y += p.vy * dt;
       } else {
-        // Заморожен: не реагирует на управление, только падает с ускорением, но без возможности прыгать
         p.vx = 0;
         p.faceTilt = 0;
         p.vy += state.gravity * dt;
         p.y += p.vy * dt;
-        // Небольшая анимация боба
         p.bob += 0.1 * dt;
       }
 
-      // Платформы обновляются всегда
       for (const platform of state.platforms) {
         if (platform.moving) {
           platform.x += platform.vx * dt;
@@ -980,7 +964,6 @@
         if (state.springTrailTimer <= 0) state.springTrailTimer = 0;
       }
 
-      // Прыжки только если не заморожены
       if (!state.frozen && p.vy > 0) {
         for (const plat of state.platforms) {
           const wasAbove = p.y + p.h <= plat.y + p.vy * dt + 6;
@@ -1011,7 +994,6 @@
         }
       }
 
-      // Бонусы (всегда активны)
       if (state.rocket && state.rocket.active) {
         state.rocket.t += 0.08 * dt;
         state.rocket.x += Math.sin(state.rocket.t) * 0.55;
@@ -1119,61 +1101,452 @@
       if (p.y > H + 80) gameOver();
     }
 
-    // ---- Отрисовка (оставлена полная, как в предыдущем рабочем варианте) ----
+    // ---- ПОЛНЫЕ ФУНКЦИИ ОТРИСОВКИ (без сокращений) ----
     function drawHeartShape(x, y, size, color, alpha = 1, rot = 0) {
-      ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(size / 10, size / 10); ctx.globalAlpha = alpha; ctx.fillStyle = color;
-      ctx.beginPath(); ctx.moveTo(10, 18); ctx.bezierCurveTo(10, 12, 0, 12, 0, 5); ctx.bezierCurveTo(0, -1, 7, -3, 10, 2); ctx.bezierCurveTo(13, -3, 20, -1, 20, 5); ctx.bezierCurveTo(20, 12, 10, 12, 10, 18); ctx.fill(); ctx.restore();
-    }
-    function drawStar(cx, cy, r, inner, color, alpha) {
-      ctx.save(); ctx.translate(cx, cy); ctx.globalAlpha = alpha; ctx.fillStyle = color; ctx.beginPath();
-      for (let i = 0; i < 10; i++) { const angle = -Math.PI / 2 + i * Math.PI / 5; const radius = i % 2 === 0 ? r : inner; const x = Math.cos(angle) * radius; const y = Math.sin(angle) * radius; if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
-      ctx.closePath(); ctx.fill(); ctx.restore();
-    }
-    function drawCloud(x, y, s = 1, alpha = 0.65) { ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.globalAlpha = alpha; ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(18, 18, 16, 0, Math.PI * 2); ctx.arc(40, 12, 18, 0, Math.PI * 2); ctx.arc(62, 18, 15, 0, Math.PI * 2); ctx.arc(42, 26, 18, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
-    function drawRocket(rocket) { if (!rocket || !rocket.active) return; const wobble = Math.sin(rocket.t) * 2.2; const flame = 5 + Math.sin(rocket.t * 2.7) * 2; const neon = state.glassesTimer > 0; ctx.save(); ctx.translate(rocket.x + rocket.w / 2, rocket.y + rocket.h / 2 + wobble); ctx.rotate(Math.sin(rocket.t * 1.5) * 0.08); ctx.shadowColor = neon ? 'rgba(255, 82, 203, 0.98)' : 'rgba(255,255,255,0.95)'; ctx.shadowBlur = neon ? 24 : 12; ctx.fillStyle = '#fff6bf'; ctx.beginPath(); ctx.ellipse(0, 0, 12, 17, 0, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0; ctx.fillStyle = neon ? '#ff7bd4' : '#ff53b1'; ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(8, -1); ctx.lineTo(5, 11); ctx.lineTo(-5, 11); ctx.lineTo(-8, -1); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillRect(-3, -4, 6, 9); ctx.fillStyle = neon ? '#8affff' : '#ffd05f'; ctx.beginPath(); ctx.moveTo(0, 11); ctx.lineTo(4, 11 + flame); ctx.lineTo(0, 14 + flame); ctx.lineTo(-4, 11 + flame); ctx.closePath(); ctx.fill(); drawStar(0, -18, 5, 2.2, neon ? '#a8ffff' : '#fff6aa', 0.9); ctx.restore(); }
-    function drawGlasses(glasses) { if (!glasses || !glasses.active) return; const wobble = Math.sin(glasses.t) * 1.8; ctx.save(); ctx.translate(glasses.x + glasses.w / 2, glasses.y + glasses.h / 2 + wobble); ctx.rotate(Math.sin(glasses.t * 1.3) * 0.06); ctx.shadowColor = 'rgba(255, 192, 235, 0.85)'; ctx.shadowBlur = 10; ctx.strokeStyle = '#ffd9ef'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.arc(-5, 0, 4.7, 0, Math.PI * 2); ctx.arc(5, 0, 4.7, 0, Math.PI * 2); ctx.moveTo(-0.5, 0); ctx.lineTo(0.5, 0); ctx.moveTo(-9.5, -0.6); ctx.lineTo(-14, -3); ctx.moveTo(9.5, -0.6); ctx.lineTo(14, -3); ctx.stroke(); ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(255, 96, 184, 0.72)'; ctx.beginPath(); ctx.arc(-5, 0, 3.6, 0, Math.PI * 2); ctx.arc(5, 0, 3.6, 0, Math.PI * 2); ctx.fill(); drawStar(0, -10, 4.5, 2, '#fff4ba', 0.82); ctx.restore(); }
-    function drawAntiStar(star) { if (!star || !star.active) return; const pulse = (Math.sin(star.t * 2.1) + 1) * 0.5; ctx.save(); ctx.translate(star.x + star.w / 2, star.y + star.h / 2); ctx.rotate(star.t * 0.08); ctx.shadowColor = 'rgba(255,255,255,0.95)'; ctx.shadowBlur = 14 + pulse * 10; drawStar(0, 0, 13 + pulse * 1.5, 6, '#fff1a8', 0.96); ctx.shadowBlur = 0; ctx.fillStyle = '#52304a'; ctx.beginPath(); ctx.arc(-3.5, -1, 1.4, 0, Math.PI * 2); ctx.arc(3.5, -1, 1.4, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#7f4b72'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(0, 3.5, 4.2, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke(); ctx.restore(); }
-    function drawAmbient() {
-      const t = performance.now() * 0.00015;
-      for (let i = 0; i < 9; i++) { const x = ((i * 79 + t * (18 + i * 2)) % (W + 120)) - 60; const y = 68 + i * 84 - (state.worldOffset * 0.08 % 84); drawCloud(x, y, 0.86 + (i % 3) * 0.18, state.glassesTimer > 0 ? 0.16 : 0.46); }
-      for (const heart of state.floatingHearts) drawHeartShape(heart.x, heart.y, heart.s, state.glassesTimer > 0 ? '#9c5f88' : '#ffffff', state.glassesTimer > 0 ? heart.alpha * 0.22 : heart.alpha, Math.sin(heart.phase + t * 12) * 0.18);
-      for (const glitter of state.glitters) { const pulse = (Math.sin(glitter.phase) + 1) * 0.5; const alpha = state.glassesTimer > 0 ? 0.06 + glitter.alpha * pulse * 0.22 : 0.12 + glitter.alpha * pulse; ctx.fillStyle = `rgba(255,255,255,${alpha})`; ctx.fillRect(glitter.x, glitter.y, glitter.s + pulse * 2, glitter.s + pulse * 2); }
-      for (const star of state.stars) { const pulse = (Math.sin(star.phase) + 1) * 0.5; drawStar(star.x, star.y, star.r + pulse * 1.4, (star.r + pulse) * 0.45, state.glassesTimer > 0 ? '#9f6c94' : '#ffdff4', state.glassesTimer > 0 ? 0.08 + pulse * 0.14 : 0.2 + pulse * 0.5); }
-      if (state.glassesTimer > 0) { for (const star of state.darkStars) { const pulse = (Math.sin(star.phase) + 1) * 0.5; drawStar(star.x, star.y, star.r + pulse * 2.1, (star.r + pulse) * 0.42, pick(['#fff6c6', '#ffd2ee', '#ffffff', '#ffabd9']), 0.22 + pulse * star.alpha * 0.55); } }
-      for (const item of state.ambient) {
-        if (item.type === 'sparkle') { const pulse = (Math.sin(item.phase) + 1) * 0.5; drawStar(item.x, item.y, item.size + pulse * 2.2, item.size * 0.45, state.glassesTimer > 0 ? '#8d6882' : '#ffffff', state.glassesTimer > 0 ? 0.08 + pulse * 0.18 : 0.2 + pulse * 0.65); }
-        else if (item.type === 'petal') { ctx.save(); ctx.translate(item.x, item.y); ctx.rotate(item.rot); ctx.globalAlpha = state.glassesTimer > 0 ? 0.18 : 0.5; ctx.fillStyle = state.glassesTimer > 0 ? '#7a506b' : '#ffc0e5'; ctx.beginPath(); ctx.ellipse(0, 0, item.size * 0.6, item.size * 0.33, 0.4, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
-        else if (item.type === 'bubble') { ctx.save(); ctx.globalAlpha = state.glassesTimer > 0 ? item.glow * 0.15 : item.glow; ctx.strokeStyle = state.glassesTimer > 0 ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.85)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(item.x, item.y, item.size * 0.5, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); }
-        else if (item.type === 'ribbon') { ctx.save(); ctx.translate(item.x, item.y); ctx.globalAlpha = state.glassesTimer > 0 ? item.alpha * 0.22 : item.alpha; ctx.strokeStyle = state.glassesTimer > 0 ? '#7d5f72' : '#ffd5ef'; ctx.lineWidth = 3; ctx.beginPath(); for (let k = 0; k < 6; k++) { const px = Math.sin(item.phase + k * 0.8) * item.wave; const py = k * (item.len / 6); if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py); } ctx.stroke(); ctx.restore(); }
-      }
-    }
-    function drawPlatform(plat) {
-      const glow = (Math.sin(plat.pulse) + 1) * 0.5; const dark = state.glassesTimer > 0; const neonActive = (state.neonTimer > 0 && state.glassesTimer > 0); const durabilityRatio = plat.destructible ? Math.max(0, plat.hitsLeft) / plat.maxHits : 1; let alpha = plat.destructible ? 0.35 + durabilityRatio * 0.65 : 1; if (plat.breaking) alpha *= clamp(plat.breakTimer / 16, 0, 1); ctx.save(); ctx.translate(plat.x, plat.y); ctx.globalAlpha = alpha;
-      if (neonActive) { ctx.shadowColor = '#ff66cc'; ctx.shadowBlur = 18; ctx.fillStyle = '#ff4da6'; roundedRect(0, 2, plat.w, plat.h, 8); ctx.fill(); ctx.fillStyle = '#ff1a8c'; roundedRect(0, 0, plat.w, plat.h - 2, 8); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,0.7)'; roundedRect(8, 3, plat.w * 0.35, 4, 4); ctx.fill(); if (plat.flash > 0) { ctx.fillStyle = `rgba(255,255,255,${0.3 + plat.flash * 0.05})`; roundedRect(0, 0, plat.w, plat.h - 2, 8); ctx.fill(); } }
-      else { ctx.shadowColor = dark ? 'rgba(255,255,255,0.08)' : `rgba(255,255,255,${0.2 + glow * 0.25})`; ctx.shadowBlur = dark ? 4 : 10 + glow * 10; ctx.fillStyle = plat.destructible ? (dark ? '#7a4a62' : '#ff9fd0') : (dark ? '#6a3a58' : '#ffb2dc'); roundedRect(0, 2, plat.w, plat.h, 8); ctx.fill(); ctx.shadowBlur = 0; ctx.fillStyle = plat.destructible ? (dark ? '#b36a90' : '#ff6bbb') : (dark ? '#90466f' : '#ff53b1'); roundedRect(0, 0, plat.w, plat.h - 2, 8); ctx.fill(); ctx.fillStyle = dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.48)'; roundedRect(8, 3, plat.w * 0.35, 4, 4); ctx.fill(); if (plat.flash > 0) { ctx.fillStyle = `rgba(255,255,255,${0.15 + plat.flash * 0.03})`; roundedRect(0, 0, plat.w, plat.h - 2, 8); ctx.fill(); } }
-      if (plat.moving) { ctx.fillStyle = dark ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.55)'; const arrow = 6 + glow * 3; ctx.beginPath(); ctx.moveTo(plat.w - 18, 7); ctx.lineTo(plat.w - 18 - arrow, 3); ctx.lineTo(plat.w - 18 - arrow, 11); ctx.closePath(); ctx.fill(); }
-      if (plat.destructible && !neonActive) { ctx.fillStyle = dark ? 'rgba(255,245,252,0.68)' : 'rgba(255,255,255,0.72)'; ctx.font = 'bold 10px Arial'; ctx.textAlign = 'right'; ctx.fillText(`x${Math.max(plat.hitsLeft, 0)}`, plat.w - 8, 11); }
-      if (plat.spring) { ctx.strokeStyle = plat.usedSpring ? (dark ? '#c88fba' : '#f6b0db') : '#ff4fb0'; ctx.lineWidth = 3; ctx.beginPath(); const sx = plat.w / 2; let sy = -2; ctx.moveTo(sx, sy + 2); const coils = 5; for (let i = 1; i <= coils * 2; i++) { const dx = i % 2 === 0 ? -8 : 8; sy -= 3.5; ctx.lineTo(sx + dx, sy); } ctx.stroke(); ctx.fillStyle = plat.usedSpring ? (dark ? '#d6acc8' : '#ffd8ef') : '#ff8dcb'; roundedRect(sx - 13, sy - 4, 26, 6, 4); ctx.fill(); }
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rot);
+      ctx.scale(size / 10, size / 10);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(10, 18);
+      ctx.bezierCurveTo(10, 12, 0, 12, 0, 5);
+      ctx.bezierCurveTo(0, -1, 7, -3, 10, 2);
+      ctx.bezierCurveTo(13, -3, 20, -1, 20, 5);
+      ctx.bezierCurveTo(20, 12, 10, 12, 10, 18);
+      ctx.fill();
       ctx.restore();
     }
-    function drawPlayer() {
-      const p = state.player; if (!p) return; const dark = state.glassesTimer > 0; ctx.save(); ctx.translate(p.x + p.w / 2, p.y + p.h / 2 + Math.sin(p.bob) * 1.4); ctx.rotate(p.faceTilt);
-      ctx.strokeStyle = dark ? '#8e4f75' : '#ff89c8'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-10, 12); ctx.lineTo(-18, 22); ctx.moveTo(10, 12); ctx.lineTo(18, 22); ctx.moveTo(-8, 22); ctx.lineTo(-11, 31); ctx.moveTo(8, 22); ctx.lineTo(11, 31); ctx.stroke();
-      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.ellipse(-11, -18, 8, 15, -0.35, 0, Math.PI * 2); ctx.ellipse(11, -18, 8, 15, 0.35, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = dark ? '#cb77a8' : '#ff79c1'; ctx.beginPath(); ctx.ellipse(-11, -17, 3.2, 7.6, -0.35, 0, Math.PI * 2); ctx.ellipse(11, -17, 3.2, 7.6, 0.35, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowColor = dark ? 'rgba(255,150,222,0.24)' : 'rgba(255,255,255,0.7)'; ctx.shadowBlur = dark ? 7 : 16; ctx.fillStyle = dark ? '#b0427f' : '#ff58b3'; roundedRect(-20, -20, 40, 46, 18); ctx.fill(); ctx.shadowBlur = 0;
-      ctx.fillStyle = dark ? '#db96c0' : '#ffd5ed'; ctx.beginPath(); ctx.ellipse(0, -3, 14, 16, 0, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = dark ? '#f0c2dd' : '#fff4fb'; ctx.beginPath(); ctx.ellipse(0, -7, 7, 6, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#3a2340'; ctx.beginPath(); ctx.arc(-7, -7, 2.6, 0, Math.PI * 2); ctx.arc(7, -7, 2.6, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(-6, -8, 0.9, 0, Math.PI * 2); ctx.arc(8, -8, 0.9, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = dark ? '#c56697' : '#ff9ccc'; ctx.beginPath(); ctx.arc(-10, -1, 2.4, 0, Math.PI * 2); ctx.arc(10, -1, 2.4, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#7a2f62'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.arc(0, 1, 6, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke(); ctx.fillStyle = dark ? '#8b416c' : '#ff4fa9'; roundedRect(-9, 8, 18, 7, 4); ctx.fill();
-      ctx.strokeStyle = dark ? '#9b5d82' : '#ff8acb'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(-7, -22); ctx.quadraticCurveTo(-12, -31, -4, -34); ctx.moveTo(7, -22); ctx.quadraticCurveTo(12, -31, 4, -34); ctx.stroke(); drawHeartShape(0, -35, 4.8, dark ? '#f4c8e2' : '#ff6ebe', 0.95, Math.sin(p.bob) * 0.12); ctx.restore();
+
+    function drawStar(cx, cy, r, inner, color, alpha) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const angle = -Math.PI / 2 + i * Math.PI / 5;
+        const radius = i % 2 === 0 ? r : inner;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
     }
-    function drawParticles() { for (const particle of state.particles) { const a = particle.alpha ?? 1; if (particle.type === 'burst' || particle.type === 'heart' || particle.type === 'tinyHeart') drawHeartShape(particle.x, particle.y, particle.size, particle.color || '#fff', a, particle.rot || 0); else if (particle.type === 'invertGlow' || particle.type === 'darkSpark' || particle.type === 'spark') drawStar(particle.x, particle.y, particle.size, particle.size * 0.45, particle.color || '#fff', a * 0.9); } for (const b of state.rocketBursts) { const alpha = clamp(b.life / 42, 0, 1); drawStar(b.x, b.y, b.size, b.size * 0.45, pick(['#fff', '#ffd79d', '#ff9fd7']), alpha); } }
+
+    function drawCloud(x, y, s = 1, alpha = 0.65) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(s, s);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(18, 18, 16, 0, Math.PI * 2);
+      ctx.arc(40, 12, 18, 0, Math.PI * 2);
+      ctx.arc(62, 18, 15, 0, Math.PI * 2);
+      ctx.arc(42, 26, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawRocket(rocket) {
+      if (!rocket || !rocket.active) return;
+      const wobble = Math.sin(rocket.t) * 2.2;
+      const flame = 5 + Math.sin(rocket.t * 2.7) * 2;
+      const neon = state.glassesTimer > 0;
+      ctx.save();
+      ctx.translate(rocket.x + rocket.w / 2, rocket.y + rocket.h / 2 + wobble);
+      ctx.rotate(Math.sin(rocket.t * 1.5) * 0.08);
+      ctx.shadowColor = neon ? 'rgba(255, 82, 203, 0.98)' : 'rgba(255,255,255,0.95)';
+      ctx.shadowBlur = neon ? 24 : 12;
+      ctx.fillStyle = '#fff6bf';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 12, 17, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = neon ? '#ff7bd4' : '#ff53b1';
+      ctx.beginPath();
+      ctx.moveTo(0, -12);
+      ctx.lineTo(8, -1);
+      ctx.lineTo(5, 11);
+      ctx.lineTo(-5, 11);
+      ctx.lineTo(-8, -1);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-3, -4, 6, 9);
+      ctx.fillStyle = neon ? '#8affff' : '#ffd05f';
+      ctx.beginPath();
+      ctx.moveTo(0, 11);
+      ctx.lineTo(4, 11 + flame);
+      ctx.lineTo(0, 14 + flame);
+      ctx.lineTo(-4, 11 + flame);
+      ctx.closePath();
+      ctx.fill();
+      drawStar(0, -18, 5, 2.2, neon ? '#a8ffff' : '#fff6aa', 0.9);
+      ctx.restore();
+    }
+
+    function drawGlasses(glasses) {
+      if (!glasses || !glasses.active) return;
+      const wobble = Math.sin(glasses.t) * 1.8;
+      ctx.save();
+      ctx.translate(glasses.x + glasses.w / 2, glasses.y + glasses.h / 2 + wobble);
+      ctx.rotate(Math.sin(glasses.t * 1.3) * 0.06);
+      ctx.shadowColor = 'rgba(255, 192, 235, 0.85)';
+      ctx.shadowBlur = 10;
+      ctx.strokeStyle = '#ffd9ef';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.arc(-5, 0, 4.7, 0, Math.PI * 2);
+      ctx.arc(5, 0, 4.7, 0, Math.PI * 2);
+      ctx.moveTo(-0.5, 0);
+      ctx.lineTo(0.5, 0);
+      ctx.moveTo(-9.5, -0.6);
+      ctx.lineTo(-14, -3);
+      ctx.moveTo(9.5, -0.6);
+      ctx.lineTo(14, -3);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(255, 96, 184, 0.72)';
+      ctx.beginPath();
+      ctx.arc(-5, 0, 3.6, 0, Math.PI * 2);
+      ctx.arc(5, 0, 3.6, 0, Math.PI * 2);
+      ctx.fill();
+      drawStar(0, -10, 4.5, 2, '#fff4ba', 0.82);
+      ctx.restore();
+    }
+
+    function drawAntiStar(star) {
+      if (!star || !star.active) return;
+      const pulse = (Math.sin(star.t * 2.1) + 1) * 0.5;
+      ctx.save();
+      ctx.translate(star.x + star.w / 2, star.y + star.h / 2);
+      ctx.rotate(star.t * 0.08);
+      ctx.shadowColor = 'rgba(255,255,255,0.95)';
+      ctx.shadowBlur = 14 + pulse * 10;
+      drawStar(0, 0, 13 + pulse * 1.5, 6, '#fff1a8', 0.96);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#52304a';
+      ctx.beginPath();
+      ctx.arc(-3.5, -1, 1.4, 0, Math.PI * 2);
+      ctx.arc(3.5, -1, 1.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#7f4b72';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(0, 3.5, 4.2, 0.15 * Math.PI, 0.85 * Math.PI);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawAmbient() {
+      const t = performance.now() * 0.00015;
+      for (let i = 0; i < 9; i++) {
+        const x = ((i * 79 + t * (18 + i * 2)) % (W + 120)) - 60;
+        const y = 68 + i * 84 - (state.worldOffset * 0.08 % 84);
+        drawCloud(x, y, 0.86 + (i % 3) * 0.18, state.glassesTimer > 0 ? 0.16 : 0.46);
+      }
+
+      for (const heart of state.floatingHearts) {
+        drawHeartShape(heart.x, heart.y, heart.s, state.glassesTimer > 0 ? '#9c5f88' : '#ffffff', state.glassesTimer > 0 ? heart.alpha * 0.22 : heart.alpha, Math.sin(heart.phase + t * 12) * 0.18);
+      }
+
+      for (const glitter of state.glitters) {
+        const pulse = (Math.sin(glitter.phase) + 1) * 0.5;
+        const alpha = state.glassesTimer > 0 ? 0.06 + glitter.alpha * pulse * 0.22 : 0.12 + glitter.alpha * pulse;
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        ctx.fillRect(glitter.x, glitter.y, glitter.s + pulse * 2, glitter.s + pulse * 2);
+      }
+
+      for (const star of state.stars) {
+        const pulse = (Math.sin(star.phase) + 1) * 0.5;
+        drawStar(star.x, star.y, star.r + pulse * 1.4, (star.r + pulse) * 0.45, state.glassesTimer > 0 ? '#9f6c94' : '#ffdff4', state.glassesTimer > 0 ? 0.08 + pulse * 0.14 : 0.2 + pulse * 0.5);
+      }
+
+      if (state.glassesTimer > 0) {
+        for (const star of state.darkStars) {
+          const pulse = (Math.sin(star.phase) + 1) * 0.5;
+          drawStar(star.x, star.y, star.r + pulse * 2.1, (star.r + pulse) * 0.42, pick(['#fff6c6', '#ffd2ee', '#ffffff', '#ffabd9']), 0.22 + pulse * star.alpha * 0.55);
+        }
+      }
+
+      for (const item of state.ambient) {
+        if (item.type === 'sparkle') {
+          const pulse = (Math.sin(item.phase) + 1) * 0.5;
+          drawStar(item.x, item.y, item.size + pulse * 2.2, item.size * 0.45, state.glassesTimer > 0 ? '#8d6882' : '#ffffff', state.glassesTimer > 0 ? 0.08 + pulse * 0.18 : 0.2 + pulse * 0.65);
+        } else if (item.type === 'petal') {
+          ctx.save();
+          ctx.translate(item.x, item.y);
+          ctx.rotate(item.rot);
+          ctx.globalAlpha = state.glassesTimer > 0 ? 0.18 : 0.5;
+          ctx.fillStyle = state.glassesTimer > 0 ? '#7a506b' : '#ffc0e5';
+          ctx.beginPath();
+          ctx.ellipse(0, 0, item.size * 0.6, item.size * 0.33, 0.4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        } else if (item.type === 'bubble') {
+          ctx.save();
+          ctx.globalAlpha = state.glassesTimer > 0 ? item.glow * 0.15 : item.glow;
+          ctx.strokeStyle = state.glassesTimer > 0 ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.85)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(item.x, item.y, item.size * 0.5, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        } else if (item.type === 'ribbon') {
+          ctx.save();
+          ctx.translate(item.x, item.y);
+          ctx.globalAlpha = state.glassesTimer > 0 ? item.alpha * 0.22 : item.alpha;
+          ctx.strokeStyle = state.glassesTimer > 0 ? '#7d5f72' : '#ffd5ef';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          for (let k = 0; k < 6; k++) {
+            const px = Math.sin(item.phase + k * 0.8) * item.wave;
+            const py = k * (item.len / 6);
+            if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    }
+
+    function drawPlatform(plat) {
+      const glow = (Math.sin(plat.pulse) + 1) * 0.5;
+      const dark = state.glassesTimer > 0;
+      const neonActive = (state.neonTimer > 0 && state.glassesTimer > 0);
+      const durabilityRatio = plat.destructible ? Math.max(0, plat.hitsLeft) / plat.maxHits : 1;
+      let alpha = plat.destructible ? 0.35 + durabilityRatio * 0.65 : 1;
+      if (plat.breaking) alpha *= clamp(plat.breakTimer / 16, 0, 1);
+      ctx.save();
+      ctx.translate(plat.x, plat.y);
+      ctx.globalAlpha = alpha;
+
+      if (neonActive) {
+        ctx.shadowColor = '#ff66cc';
+        ctx.shadowBlur = 18;
+        ctx.fillStyle = '#ff4da6';
+        roundedRect(0, 2, plat.w, plat.h, 8);
+        ctx.fill();
+        ctx.fillStyle = '#ff1a8c';
+        roundedRect(0, 0, plat.w, plat.h - 2, 8);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        roundedRect(8, 3, plat.w * 0.35, 4, 4);
+        ctx.fill();
+        if (plat.flash > 0) {
+          ctx.fillStyle = `rgba(255,255,255,${0.3 + plat.flash * 0.05})`;
+          roundedRect(0, 0, plat.w, plat.h - 2, 8);
+          ctx.fill();
+        }
+      } else {
+        ctx.shadowColor = dark ? 'rgba(255,255,255,0.08)' : `rgba(255,255,255,${0.2 + glow * 0.25})`;
+        ctx.shadowBlur = dark ? 4 : 10 + glow * 10;
+        ctx.fillStyle = plat.destructible ? (dark ? '#7a4a62' : '#ff9fd0') : (dark ? '#6a3a58' : '#ffb2dc');
+        roundedRect(0, 2, plat.w, plat.h, 8);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = plat.destructible ? (dark ? '#b36a90' : '#ff6bbb') : (dark ? '#90466f' : '#ff53b1');
+        roundedRect(0, 0, plat.w, plat.h - 2, 8);
+        ctx.fill();
+        ctx.fillStyle = dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.48)';
+        roundedRect(8, 3, plat.w * 0.35, 4, 4);
+        ctx.fill();
+        if (plat.flash > 0) {
+          ctx.fillStyle = `rgba(255,255,255,${0.15 + plat.flash * 0.03})`;
+          roundedRect(0, 0, plat.w, plat.h - 2, 8);
+          ctx.fill();
+        }
+      }
+
+      if (plat.moving) {
+        ctx.fillStyle = dark ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.55)';
+        const arrow = 6 + glow * 3;
+        ctx.beginPath();
+        ctx.moveTo(plat.w - 18, 7);
+        ctx.lineTo(plat.w - 18 - arrow, 3);
+        ctx.lineTo(plat.w - 18 - arrow, 11);
+        ctx.closePath();
+        ctx.fill();
+      }
+      if (plat.destructible && !neonActive) {
+        ctx.fillStyle = dark ? 'rgba(255,245,252,0.68)' : 'rgba(255,255,255,0.72)';
+        ctx.font = 'bold 10px Arial';
+        ctx.textAlign = 'right';
+        ctx.fillText(`x${Math.max(plat.hitsLeft, 0)}`, plat.w - 8, 11);
+      }
+      if (plat.spring) {
+        ctx.strokeStyle = plat.usedSpring ? (dark ? '#c88fba' : '#f6b0db') : '#ff4fb0';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        const sx = plat.w / 2;
+        let sy = -2;
+        ctx.moveTo(sx, sy + 2);
+        const coils = 5;
+        for (let i = 1; i <= coils * 2; i++) {
+          const dx = i % 2 === 0 ? -8 : 8;
+          sy -= 3.5;
+          ctx.lineTo(sx + dx, sy);
+        }
+        ctx.stroke();
+        ctx.fillStyle = plat.usedSpring ? (dark ? '#d6acc8' : '#ffd8ef') : '#ff8dcb';
+        roundedRect(sx - 13, sy - 4, 26, 6, 4);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawPlayer() {
+      const p = state.player;
+      if (!p) return;
+      const dark = state.glassesTimer > 0;
+      ctx.save();
+      ctx.translate(p.x + p.w / 2, p.y + p.h / 2 + Math.sin(p.bob) * 1.4);
+      ctx.rotate(p.faceTilt);
+
+      ctx.strokeStyle = dark ? '#8e4f75' : '#ff89c8';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-10, 12);
+      ctx.lineTo(-18, 22);
+      ctx.moveTo(10, 12);
+      ctx.lineTo(18, 22);
+      ctx.moveTo(-8, 22);
+      ctx.lineTo(-11, 31);
+      ctx.moveTo(8, 22);
+      ctx.lineTo(11, 31);
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.ellipse(-11, -18, 8, 15, -0.35, 0, Math.PI * 2);
+      ctx.ellipse(11, -18, 8, 15, 0.35, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = dark ? '#cb77a8' : '#ff79c1';
+      ctx.beginPath();
+      ctx.ellipse(-11, -17, 3.2, 7.6, -0.35, 0, Math.PI * 2);
+      ctx.ellipse(11, -17, 3.2, 7.6, 0.35, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.shadowColor = dark ? 'rgba(255,150,222,0.24)' : 'rgba(255,255,255,0.7)';
+      ctx.shadowBlur = dark ? 7 : 16;
+      ctx.fillStyle = dark ? '#b0427f' : '#ff58b3';
+      roundedRect(-20, -20, 40, 46, 18);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = dark ? '#db96c0' : '#ffd5ed';
+      ctx.beginPath();
+      ctx.ellipse(0, -3, 14, 16, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = dark ? '#f0c2dd' : '#fff4fb';
+      ctx.beginPath();
+      ctx.ellipse(0, -7, 7, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#3a2340';
+      ctx.beginPath();
+      ctx.arc(-7, -7, 2.6, 0, Math.PI * 2);
+      ctx.arc(7, -7, 2.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(-6, -8, 0.9, 0, Math.PI * 2);
+      ctx.arc(8, -8, 0.9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = dark ? '#c56697' : '#ff9ccc';
+      ctx.beginPath();
+      ctx.arc(-10, -1, 2.4, 0, Math.PI * 2);
+      ctx.arc(10, -1, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#7a2f62';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.arc(0, 1, 6, 0.15 * Math.PI, 0.85 * Math.PI);
+      ctx.stroke();
+      ctx.fillStyle = dark ? '#8b416c' : '#ff4fa9';
+      roundedRect(-9, 8, 18, 7, 4);
+      ctx.fill();
+
+      ctx.strokeStyle = dark ? '#9b5d82' : '#ff8acb';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(-7, -22);
+      ctx.quadraticCurveTo(-12, -31, -4, -34);
+      ctx.moveTo(7, -22);
+      ctx.quadraticCurveTo(12, -31, 4, -34);
+      ctx.stroke();
+      drawHeartShape(0, -35, 4.8, dark ? '#f4c8e2' : '#ff6ebe', 0.95, Math.sin(p.bob) * 0.12);
+      ctx.restore();
+    }
+
+    function drawParticles() {
+      for (const particle of state.particles) {
+        const a = particle.alpha ?? 1;
+        if (particle.type === 'burst' || particle.type === 'heart' || particle.type === 'tinyHeart') {
+          drawHeartShape(particle.x, particle.y, particle.size, particle.color || '#fff', a, particle.rot || 0);
+        } else if (particle.type === 'invertGlow' || particle.type === 'darkSpark' || particle.type === 'spark') {
+          drawStar(particle.x, particle.y, particle.size, particle.size * 0.45, particle.color || '#fff', a * 0.9);
+        }
+      }
+      for (const b of state.rocketBursts) {
+        const alpha = clamp(b.life / 42, 0, 1);
+        drawStar(b.x, b.y, b.size, b.size * 0.45, pick(['#fff', '#ffd79d', '#ff9fd7']), alpha);
+      }
+    }
+
     function draw() {
-      const dark = state.glassesTimer > 0; const gradient = ctx.createLinearGradient(0, 0, 0, H);
-      if (dark) { gradient.addColorStop(0, '#37202f'); gradient.addColorStop(0.52, '#25131f'); gradient.addColorStop(1, '#170f16'); } else { gradient.addColorStop(0, '#ffe9f8'); gradient.addColorStop(0.52, '#ffc7ea'); gradient.addColorStop(1, '#ffa7da'); }
-      ctx.fillStyle = gradient; ctx.fillRect(0, 0, W, H);
-      drawAmbient(); state.platforms.forEach(drawPlatform); drawRocket(state.rocket); drawGlasses(state.glasses); drawAntiStar(state.antiStar); drawParticles(); drawPlayer();
-      if (state.starTimer > 0) { ctx.save(); ctx.globalAlpha = 0.7; ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
-      else if (state.invertTimer > 0 && state.glassesTimer <= 0) { const timer = state.invertTimer; const maxTimer = 5 * 60; const ratio = timer / maxTimer; ctx.save(); ctx.globalAlpha = 0.12 + (1 - ratio) * 0.08; ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
-      if (dark) { ctx.save(); ctx.fillStyle = 'rgba(8, 7, 10, 0.15)'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+      const dark = state.glassesTimer > 0;
+      const gradient = ctx.createLinearGradient(0, 0, 0, H);
+      if (dark) {
+        gradient.addColorStop(0, '#37202f');
+        gradient.addColorStop(0.52, '#25131f');
+        gradient.addColorStop(1, '#170f16');
+      } else {
+        gradient.addColorStop(0, '#ffe9f8');
+        gradient.addColorStop(0.52, '#ffc7ea');
+        gradient.addColorStop(1, '#ffa7da');
+      }
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, W, H);
+
+      drawAmbient();
+      state.platforms.forEach(drawPlatform);
+      drawRocket(state.rocket);
+      drawGlasses(state.glasses);
+      drawAntiStar(state.antiStar);
+      drawParticles();
+      drawPlayer();
+
+      if (state.starTimer > 0) {
+        ctx.save();
+        ctx.globalAlpha = 0.7;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
+      } else if (state.invertTimer > 0 && state.glassesTimer <= 0) {
+        const timer = state.invertTimer;
+        const maxTimer = 5 * 60;
+        const ratio = timer / maxTimer;
+        ctx.save();
+        ctx.globalAlpha = 0.12 + (1 - ratio) * 0.08;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
+      }
+
+      if (dark) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(8, 7, 10, 0.15)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
+      }
     }
 
     function loop(ts) {
@@ -1211,7 +1584,10 @@
 
     startBtn.addEventListener('click', resetGame);
     restartBtn.addEventListener('click', resetGame);
-    canvas.addEventListener('pointerdown', () => { if (!state.running && !gameOverOverlay.classList.contains('hidden')) return; if (!state.running && !startOverlay.classList.contains('hidden')) resetGame(); });
+    canvas.addEventListener('pointerdown', () => {
+      if (!state.running && !gameOverOverlay.classList.contains('hidden')) return;
+      if (!state.running && !startOverlay.classList.contains('hidden')) resetGame();
+    });
 
     loadLeaderboard();
     resetWorldDecor();
@@ -1222,4 +1598,3 @@
   </script>
 </body>
 </html>
-```
