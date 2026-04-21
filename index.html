@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Pink Doodle Jump Ultra — Бонусы ×20 (фикс спавна)</title>
+  <title>Pink Doodle Jump Ultra — Бонусы ×20 (переработанные эффекты)</title>
   <style>
     :root {
       --bg1: #ffe7f7;
@@ -62,19 +62,21 @@
       isolation: isolate;
     }
 
+    /* Инверсия только от ракеты (без антизвезды) */
     .game-shell.invert-mode {
       filter: invert(1) hue-rotate(180deg) saturate(1.35) contrast(1.08);
       box-shadow: 0 0 0 6px rgba(255,255,255,0.5), 0 0 45px rgba(255,255,255,0.9), 0 18px 60px rgba(255,255,255,0.5);
       animation: invertPulse 0.35s ease-in-out infinite alternate;
     }
 
+    /* Очки: менее тёмный режим */
     .game-shell.glasses-mode {
-      background: linear-gradient(180deg, #2f0f27, #25121f 46%, #1b1119 100%);
+      background: linear-gradient(180deg, #3a1f30, #2c1824 46%, #1f141b 100%);
       box-shadow: 0 12px 48px rgba(0,0,0,0.56), inset 0 0 0 2px rgba(255,255,255,0.06);
     }
 
     .game-shell.glasses-mode canvas {
-      filter: brightness(0.5) saturate(0.72) contrast(0.95);
+      filter: brightness(0.7) saturate(0.8) contrast(0.98);
     }
 
     .game-shell.glasses-mode .pill,
@@ -93,6 +95,7 @@
       box-shadow: 0 8px 18px rgba(0,0,0,0.34) !important;
     }
 
+    /* Неон для панелей (при комбо) */
     .game-shell.glasses-mode.neon-panels .pill,
     .game-shell.glasses-mode.neon-panels .panel,
     .game-shell.glasses-mode.neon-panels .control-btn {
@@ -296,7 +299,7 @@
       <div class="hud-left">
         <div class="pill">💖 Счёт: <span id="score">0</span></div>
         <div class="pill fx-pill">🎀 Эффект: <span id="fxName">искры</span></div>
-        <div class="pill fx-pill" id="hueStatus">🌈 Спектр: 0/5</div>
+        <div class="pill fx-pill" id="hueStatus">🌈 Спектр: 0/3</div>
       </div>
       <div class="hud-right">
         <div class="pill">🏆 Рекорд: <span id="best">0</span></div>
@@ -312,9 +315,9 @@
         <h1>Pink Jump Ultra</h1>
         <p>✨ БОНУСЫ В 20 РАЗ ЧАЩЕ! ✨<br>Ракета, очки и антизвезда появляются каждые 15 очков.</p>
         <p>Управление: <b>← →</b> / <b>A D</b><br>На телефоне — кнопки снизу.</p>
-        <p><b>🕶 Очки</b>: +666 очков и затемнённый режим на 22 сек.</p>
+        <p><b>🕶 Очки</b>: +666 очков и полумрак на 22 сек.</p>
         <p><b>🚀 Ракета</b>: +1000 очков, инверсия на 5 сек + прыжок+ на 10 сек.</p>
-        <p><b>⭐ Антизвезда</b>: сбрасывает все бонусы и даёт инверсию.</p>
+        <p><b>⭐ Антизвезда</b>: снимает все бонусы и заливает экран белым на 10 сек (70% прозрачности).</p>
         <button class="btn" id="startBtn">Играть</button>
       </div>
     </div>
@@ -394,7 +397,7 @@
       glassesTimer: 0,
       neonTimer: 0,
       jumpBoostTimer: 0,
-      starTimer: 0,
+      starTimer: 0,           // антизвезда: белый экран 10 сек, без инверсии
       rocketsDuringPoints: 0,
       hueShiftActive: false,
       springTrailTimer: 0,
@@ -556,14 +559,15 @@
         starStatusEl.classList.remove('ready');
       }
 
+      // Спектр теперь 3/3
       if (state.glassesTimer > 0 && !state.hueShiftActive) {
-        hueStatusEl.textContent = `🌈 Спектр: ${state.rocketsDuringPoints}/5`;
+        hueStatusEl.textContent = `🌈 Спектр: ${state.rocketsDuringPoints}/3`;
         hueStatusEl.classList.toggle('ready', state.rocketsDuringPoints > 0);
       } else if (state.hueShiftActive && state.glassesTimer > 0) {
         hueStatusEl.textContent = '🌈 Спектр: активен';
         hueStatusEl.classList.add('ready');
       } else {
-        hueStatusEl.textContent = '🌈 Спектр: 0/5';
+        hueStatusEl.textContent = '🌈 Спектр: 0/3';
         hueStatusEl.classList.remove('ready');
       }
     }
@@ -571,7 +575,8 @@
     function syncVisualModes() {
       gameShell.classList.toggle('glasses-mode', state.glassesTimer > 0);
       gameShell.classList.toggle('neon-panels', state.neonTimer > 0 && state.glassesTimer > 0);
-      gameShell.classList.toggle('invert-mode', state.starTimer > 0 || (state.invertTimer > 0 && state.glassesTimer <= 0));
+      // Инверсия только от ракеты (invertTimer), антизвезда не даёт инверсию
+      gameShell.classList.toggle('invert-mode', state.invertTimer > 0 && state.glassesTimer <= 0);
       refreshHueShift();
     }
 
@@ -633,9 +638,7 @@
     function addScore(value) {
       state.score = Math.max(state.score, Math.floor(value));
       scoreEl.textContent = Math.floor(state.score);
-      // Бонусы спавнятся каждые 15 очков, даже если старые не собраны (они удаляются при выходе за экран)
       while (state.score >= state.nextPickupRollScore) {
-        // Проверяем, нужно ли создать ракету: если нет активной или она ушла далеко вниз
         const rocketMissing = !state.rocket || !state.rocket.active || state.rocket.y > H + 100;
         if (rocketMissing && chance(0.30)) {
           state.rocket = createRocket(-rand(120, 320));
@@ -700,7 +703,8 @@
         state.neonTimer = Math.max(state.neonTimer, 7 * 60);
         state.glassesTimer = Math.max(0, state.glassesTimer - 5 * 60);
         state.rocketsDuringPoints += 1;
-        if (state.rocketsDuringPoints >= 5) state.hueShiftActive = true;
+        // Порог активации спектра — 3 ракетки (было 5)
+        if (state.rocketsDuringPoints >= 3) state.hueShiftActive = true;
         spawnTrail(rocket.x + rocket.w / 2, rocket.y + rocket.h / 2, 34, 'spark', ['#ffbaf0', '#ff67bf', '#fff']);
       } else {
         state.invertTimer = 5 * 60;
@@ -718,14 +722,15 @@
       syncVisualModes();
     }
 
+    // Антизвезда: снимаем все бонусы, белый экран 10 сек с 70% opacity, без инверсии
     function triggerAntiStar(star) {
       if (!star || !star.active) return;
       star.active = false;
-      clearActiveBonuses();
-      state.starTimer = 5 * 60;
+      clearActiveBonuses();           // сбрасываем все положительные бонусы
+      state.starTimer = 10 * 60;      // 10 секунд белого экрана
       spawnTrail(star.x + star.w / 2, star.y + star.h / 2, 30, 'spark', ['#fff7b2', '#ffffff', '#ff9cdd']);
       updateStatuses();
-      syncVisualModes();
+      syncVisualModes();              // убираем инверсию и прочее, оставляем starTimer
     }
 
     function intersects(a, b) {
@@ -839,7 +844,7 @@
         }
       }
 
-      // Бонусы: обновляем позиции и проверяем сбор
+      // Бонусы
       if (state.rocket && state.rocket.active) {
         state.rocket.t += 0.08 * dt;
         state.rocket.x += Math.sin(state.rocket.t) * 0.55;
@@ -858,12 +863,12 @@
         if (intersects(p, state.antiStar)) triggerAntiStar(state.antiStar);
       }
 
-      // ★★★ УДАЛЯЕМ БОНУСЫ, КОТОРЫЕ УШЛИ ЗА ЭКРАН, ЧТОБЫ НОВЫЕ МОГЛИ СПАВНИТЬСЯ ★★★
+      // Удаляем устаревшие бонусы
       if (state.rocket && (state.rocket.y > H + 100 || !state.rocket.active)) state.rocket = null;
       if (state.glasses && (state.glasses.y > H + 100 || !state.glasses.active)) state.glasses = null;
       if (state.antiStar && (state.antiStar.y > H + 100 || !state.antiStar.active)) state.antiStar = null;
 
-      // Камера и очки
+      // Камера
       if (p.y < state.cameraThreshold) {
         const diff = state.cameraThreshold - p.y;
         p.y = state.cameraThreshold;
@@ -877,11 +882,9 @@
         if (state.antiStar) state.antiStar.y += diff;
       }
 
-      // Очистка платформ
       state.platforms = state.platforms.filter(plat => plat.breakTimer > 0 || !plat.breaking);
       while (state.platforms.length && state.platforms[0].y > H + 40) state.platforms.shift();
 
-      // Генерация новых платформ сверху
       let highestY = Math.min(...state.platforms.map(pf => pf.y));
       while (highestY > -180) {
         highestY -= rand(54, 80);
@@ -909,21 +912,18 @@
         if (b.life <= 0) state.rocketBursts.splice(i, 1);
       }
 
-      // Таймеры
-      if (state.starTimer > 0) {
-        state.starTimer -= dt;
-        if (chance(0.55)) {
-          state.particles.push({ type: 'invertGlow', x: rand(0, W), y: rand(0, H), vx: rand(-0.45, 0.45), vy: rand(-0.35, 0.35), life: rand(10, 22), size: rand(5, 12), rot: rand(0, Math.PI * 2), rs: rand(-0.08, 0.08), alpha: 1, color: pick(['#ffffff', '#fff7a0', '#ffd0ef']) });
-        }
-        if (state.starTimer <= 0) state.starTimer = 0;
-      } else if (state.invertTimer > 0 && state.glassesTimer <= 0) {
+      // Таймеры: invertTimer (ракета) и starTimer (антизвезда)
+      if (state.invertTimer > 0 && state.glassesTimer <= 0) {
         state.invertTimer -= dt;
         if (chance(0.45)) {
           state.particles.push({ type: 'invertGlow', x: rand(0, W), y: rand(0, H), vx: rand(-0.4, 0.4), vy: rand(-0.3, 0.3), life: rand(10, 22), size: rand(5, 12), rot: rand(0, Math.PI * 2), rs: rand(-0.08, 0.08), alpha: 1, color: pick(['#ffffff', '#fff7a0', '#ffd0ef']) });
         }
         if (state.invertTimer <= 0) state.invertTimer = 0;
-      } else if (state.glassesTimer > 0) {
-        state.invertTimer = 0;
+      }
+
+      if (state.starTimer > 0) {
+        state.starTimer -= dt;
+        if (state.starTimer <= 0) state.starTimer = 0;
       }
 
       if (state.jumpBoostTimer > 0) {
@@ -956,7 +956,7 @@
       if (p.y > H + 80) gameOver();
     }
 
-    // --- Отрисовка (оставлена без изменений для краткости, полная рабочая) ---
+    // ------------------ ОТРИСОВКА (с неоновыми платформами для комбо) ------------------
     function drawHeartShape(x, y, size, color, alpha = 1, rot = 0) {
       ctx.save();
       ctx.translate(x, y);
@@ -1171,32 +1171,56 @@
       }
     }
 
+    // Платформы с поддержкой неонового свечения для комбо (очки + ракетка)
     function drawPlatform(plat) {
       const glow = (Math.sin(plat.pulse) + 1) * 0.5;
       const dark = state.glassesTimer > 0;
+      const neonActive = (state.neonTimer > 0 && state.glassesTimer > 0);
       const durabilityRatio = plat.destructible ? Math.max(0, plat.hitsLeft) / plat.maxHits : 1;
       let alpha = plat.destructible ? 0.35 + durabilityRatio * 0.65 : 1;
       if (plat.breaking) alpha *= clamp(plat.breakTimer / 16, 0, 1);
       ctx.save();
       ctx.translate(plat.x, plat.y);
       ctx.globalAlpha = alpha;
-      ctx.shadowColor = dark ? 'rgba(255,255,255,0.08)' : `rgba(255,255,255,${0.2 + glow * 0.25})`;
-      ctx.shadowBlur = dark ? 4 : 10 + glow * 10;
-      ctx.fillStyle = plat.destructible ? (dark ? '#7a4a62' : '#ff9fd0') : (dark ? '#6a3a58' : '#ffb2dc');
-      roundedRect(0, 2, plat.w, plat.h, 8);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = plat.destructible ? (dark ? '#b36a90' : '#ff6bbb') : (dark ? '#90466f' : '#ff53b1');
-      roundedRect(0, 0, plat.w, plat.h - 2, 8);
-      ctx.fill();
-      ctx.fillStyle = dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.48)';
-      roundedRect(8, 3, plat.w * 0.35, 4, 4);
-      ctx.fill();
-      if (plat.flash > 0) {
-        ctx.fillStyle = `rgba(255,255,255,${0.15 + plat.flash * 0.03})`;
+      
+      // Неоновое свечение для платформ при комбо
+      if (neonActive) {
+        ctx.shadowColor = '#ff66cc';
+        ctx.shadowBlur = 18;
+        ctx.fillStyle = '#ff4da6';
+        roundedRect(0, 2, plat.w, plat.h, 8);
+        ctx.fill();
+        ctx.fillStyle = '#ff1a8c';
         roundedRect(0, 0, plat.w, plat.h - 2, 8);
         ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        roundedRect(8, 3, plat.w * 0.35, 4, 4);
+        ctx.fill();
+        if (plat.flash > 0) {
+          ctx.fillStyle = `rgba(255,255,255,${0.3 + plat.flash * 0.05})`;
+          roundedRect(0, 0, plat.w, plat.h - 2, 8);
+          ctx.fill();
+        }
+      } else {
+        ctx.shadowColor = dark ? 'rgba(255,255,255,0.08)' : `rgba(255,255,255,${0.2 + glow * 0.25})`;
+        ctx.shadowBlur = dark ? 4 : 10 + glow * 10;
+        ctx.fillStyle = plat.destructible ? (dark ? '#7a4a62' : '#ff9fd0') : (dark ? '#6a3a58' : '#ffb2dc');
+        roundedRect(0, 2, plat.w, plat.h, 8);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = plat.destructible ? (dark ? '#b36a90' : '#ff6bbb') : (dark ? '#90466f' : '#ff53b1');
+        roundedRect(0, 0, plat.w, plat.h - 2, 8);
+        ctx.fill();
+        ctx.fillStyle = dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.48)';
+        roundedRect(8, 3, plat.w * 0.35, 4, 4);
+        ctx.fill();
+        if (plat.flash > 0) {
+          ctx.fillStyle = `rgba(255,255,255,${0.15 + plat.flash * 0.03})`;
+          roundedRect(0, 0, plat.w, plat.h - 2, 8);
+          ctx.fill();
+        }
       }
+      
       if (plat.moving) {
         ctx.fillStyle = dark ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.55)';
         const arrow = 6 + glow * 3;
@@ -1207,7 +1231,7 @@
         ctx.closePath();
         ctx.fill();
       }
-      if (plat.destructible) {
+      if (plat.destructible && !neonActive) {
         ctx.fillStyle = dark ? 'rgba(255,245,252,0.68)' : 'rgba(255,255,255,0.72)';
         ctx.font = 'bold 10px Arial';
         ctx.textAlign = 'right';
@@ -1357,9 +1381,16 @@
       drawParticles();
       drawPlayer();
 
-      if (state.starTimer > 0 || (state.invertTimer > 0 && state.glassesTimer <= 0)) {
-        const timer = state.starTimer > 0 ? state.starTimer : state.invertTimer;
-        const maxTimer = state.starTimer > 0 ? 5 * 60 : 5 * 60;
+      // Эффект антизвезды: белый экран 70% opacity (поверх всего, включая затемнение очков)
+      if (state.starTimer > 0) {
+        ctx.save();
+        ctx.globalAlpha = 0.7;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
+      } else if (state.invertTimer > 0 && state.glassesTimer <= 0) {
+        const timer = state.invertTimer;
+        const maxTimer = 5 * 60;
         const ratio = timer / maxTimer;
         ctx.save();
         ctx.globalAlpha = 0.12 + (1 - ratio) * 0.08;
@@ -1368,9 +1399,10 @@
         ctx.restore();
       }
 
+      // Лёгкое затемнение для очков (менее тёмное)
       if (dark) {
         ctx.save();
-        ctx.fillStyle = 'rgba(8, 7, 10, 0.26)';
+        ctx.fillStyle = 'rgba(8, 7, 10, 0.15)';
         ctx.fillRect(0, 0, W, H);
         ctx.restore();
       }
